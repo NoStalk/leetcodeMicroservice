@@ -205,18 +205,7 @@ func fetchDetails(ctx context.Context, username string) (submissions []serviceUt
 
 		case *network.EventRequestWillBeSent:
 
-			if strfunc ShowCookies() chromedp.Action {
-				return chromedp.ActionFunc(func(ctx context.Context) error {
-					cookies, err := network.GetAllCookies().Do(ctx)
-					if err != nil {
-						return err
-					}
-					for i, cookie := range cookies {
-						log.Printf("chrome cookie %d: %+v", i, cookie)
-					}
-					return nil
-				})
-			}ings.Contains(ev.Request.PostData, "recentAcSubmissions") {
+			if strings.Contains(ev.Request.PostData, "recentAcSubmissions") {
 				recentACSubmissionRequestId = ev.RequestID
 			} else if strings.Contains(ev.Request.PostData, "userContestRankingInfo") {
 				userContestHistoryRequestID = ev.RequestID
