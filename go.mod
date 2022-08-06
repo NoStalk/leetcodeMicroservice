@@ -3,7 +3,7 @@ module github.com/NoStalk/leetcode
 go 1.18
 
 require (
-	github.com/NoStalk/serviceUtilities v0.0.0-20220805123857-1d9c3098dd6b
+	github.com/NoStalk/serviceUtilities v0.0.0-20220806180453-a706b9d9deb9
 	github.com/chromedp/cdproto v0.0.0-20220801115359-6a862c1fb810
 	github.com/joho/godotenv v1.4.0
 	google.golang.org/grpc v1.48.0

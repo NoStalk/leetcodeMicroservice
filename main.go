@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +14,6 @@ import (
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/NoStalk/serviceUtilities"
-	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 )
@@ -45,7 +44,11 @@ type RecentQuestions struct {
 type UserContestHistoryResponse struct {
 	Data ConsestData `json:"data"`
 }
-type ConsestData struct {12.779s
+type ConsestData struct {
+	UserContestRanking        UserContestRanking          `json:"userContestRanking"`
+	UserContestRankingHistory []UserContestRankingHistory `json:"userContestRankingHistory"`
+}
+type UserContestRanking struct {
 	AttendedContestsCount int64       `json:"attendedContestsCount"`
 	Rating                float64     `json:"rating"`
 	GlobalRanking         int64       `json:"globalRanking"`
@@ -75,14 +78,34 @@ const (
 	Up   TrendDirection = "UP"
 )
 
+func WaitTillSessionCookieIsSet() chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		for {
+			cookies, err := network.GetAllCookies().Do(ctx)
+			if err != nil {
+				return err
+			}
+			for _, cookie := range cookies {
+				if cookie.Name == "LEETCODE_SESSION" {
+					return nil
+				}
+			}
+			time.Sleep(2 * time.Second)
+		}
+	})
+}
+
 //TODO implement cookie caching
-func logIntoLeetCode(username, password string) chromedp.Tasks {
+func logIntoLeetCode(ctx context.Context, username, password string) error {
+
+	log.Println("⏳ logging into leetcode...")
 
 	userNameInputFeildSelector := `input[name='login']`
 	passwordNameInputFeildSelector := `input[name='password']`
 	submitButtonSelector := `button#signin_btn`
 
-	return chromedp.Tasks{
+	err := chromedp.Run(
+		ctx,
 		chromedp.Navigate(`https://leetcode.com/accounts/login/`),
 
 		chromedp.WaitReady(userNameInputFeildSelector),
@@ -93,107 +116,18 @@ func logIntoLeetCode(username, password string) chromedp.Tasks {
 
 		chromedp.WaitReady(submitButtonSelector),
 		chromedp.Evaluate(`document.querySelector('button#signin_btn').click()`, nil),
-		//Wait for session to be loaded properly
-		chromedp.Sleep(7 * time.Second),
-	}
-}
 
-func evaluateUnixTimeStamp(timeString string) (string, error) {
-
-	if strings.Contains(timeString, "few seconds ago") {
-		return time.Now().Format(time.RFC3339), nil
-	}
-
-	var seconds int64
-	words := strings.Split(timeString, " ")
-	var second int64
-	var err error
-
-	for i := 0; i < len(words)-1; i += 2 {
-		duration, unit := words[i], words[i+1]
-
-		switch unit {
-		case "year":
-			fallthrough
-		case "years":
-			second, err = strconv.ParseInt(duration, 10, 64)
-			seconds += second * 31536000
-		case "month":
-			fallthrough
-		case "months":
-			second, err = strconv.ParseInt(duration, 10, 64)
-			seconds += second * 2592000
-		case "week":
-			fallthrough
-		case "weeks":
-			second, err = strconv.ParseInt(duration, 10, 64)
-			seconds += second * 604800
-		case "day":
-			fallthrough
-		case "days":
-			second, err = strconv.ParseInt(duration, 10, 64)
-			seconds += second * 86400
-		case "houbyter":
-			fallthrough
-		case "hours":
-			second, err = strconv.ParseInt(duration, 10, 64)
-			seconds += second * 3600
-		case "minute":
-			fallthrough
-		case "minutes":
-			second, err = strconv.ParseInt(duration, 10, 64)
-			seconds += second * 60
-		case "second":
-			fallthrough
-		case "seconds":
-			seconds += second
-		}
-	}
-	return time.Now().Add(time.Duration(-seconds) * time.Second).Format(time.RFC3339), err
-}
-
-func listenForNetworkEvent(ctx context.Context) {
-
-	var recentACSubmissionRequestId network.RequestID
-	var recentACSubmissions RecentACSubmissionsResponse
-	c := chromedp.FromContext(ctx)
-	chromedp.ListenTarget(ctx, func(ev interface{}) {
-		switch ev := ev.(type) {
-
-		case *network.EventRequestWillBeSent:
-			req := ev.Request
-			if strings.Contains(req.PostData, "recentAcSubmissions") {
-				recentACSubmissionRequestId = ev.RequestID
-				fmt.Println("set recentACSubmission", recentACSubmissionRequestId)
-			}
-
-		case *network.EventResponseReceived:
-			switch ev.RequestID {
-			case recentACSubmissionRequestId:
-				//TODO handle error
-				fmt.Println("received recentACSubmission", ev.RequestID)
-				byteArr, err := network.GetResponseBody(recentACSubmissionRequestId).Do(cdp.WithExecutor(ctx, c.Target))
-				if err != nil {
-					log.Println(err)
-				}
-				fmt.Println(byteArr)
-				json.Unmarshal(byteArr, &recentACSubmissions)
-				fmt.Println("recentACSubmissions", recentACSubmissions)
-			}
-		}
-	})
-}
-
-func getSubmissionDetails(ctx context.Context, submissionLink string) (problemLink string, language string, date string, err error) {
-	chromedp.Run(ctx,
-		chromedp.Navigate(submissionLink),
-		chromedp.Evaluate(`document.querySelector('a.inline-wrap').href`, &problemLink),
-		chromedp.Text(`span#result_language`, &language),
+		WaitTillSessionCookieIsSet(),
 	)
-	return
+	if err != nil {
+		return err
+	}
+	logWithTimeStamp("✅ Log in to leetcode successfull")
+	return nil
 }
 
 func fetchDetails(ctx context.Context, username string) (submissions []serviceUtilities.SubmissionData, contests []serviceUtilities.ContestData, err error) {
+	log.Println("⏳ starting data fetch...")
 
 	var recentACSubmissionRequestId network.RequestID
 	var userContestHistoryRequestID network.RequestID
@@ -223,14 +157,14 @@ func fetchDetails(ctx context.Context, username string) (submissions []serviceUt
 			if numberOfRequestsToWaitFor == 0 {
 				done <- true
 			}
-			// fmt.Printf("%d, ", numberOfRequestsToWaitFor)
 		}
 	})
 
-	if err := chromedp.Run(ctx,
+	err = chromedp.Run(ctx,
 		chromedp.Navigate(`https://leetcode.com/`+username),
-	); err != nil {
-		log.Fatal(err)
+	)
+	if err != nil {
+		return
 	}
 
 	//Wait for responses to arrive
@@ -242,25 +176,26 @@ func fetchDetails(ctx context.Context, username string) (submissions []serviceUt
 	var recentACSubmisssions RecentACSubmissionsResponse
 	var userContestHistory UserContestHistoryResponse
 
-	err = chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-		buffer, err := network.GetResponseBody(recentACSubmissionRequestId).Do(ctx)
-		if err != nil {
-			return err
-		}
-		if err = json.Unmarshal(buffer, &recentACSubmisssions); err != nil {
-			return err
-		}
+	err = chromedp.Run(
+		ctx,
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			buffer, err := network.GetResponseBody(recentACSubmissionRequestId).Do(ctx)
+			if err != nil {
+				return err
+			}
+			if err = json.Unmarshal(buffer, &recentACSubmisssions); err != nil {
+				return err
+			}
 
-		buffer, err = network.GetResponseBody(userContestHistoryRequestID).Do(ctx)
-		if err != nil {
-			return err
-		}
+			if buffer, err = network.GetResponseBody(userContestHistoryRequestID).Do(ctx); err != nil {
+				return err
+			}
 
-		if err = json.Unmarshal(buffer, &userContestHistory); err != nil {
-			return err
-		}
-		return nil
-	}))
+			if err = json.Unmarshal(buffer, &userContestHistory); err != nil {
+				return err
+			}
+			return nil
+		}))
 	if err != nil {
 		return
 	}
@@ -300,51 +235,41 @@ func fetchDetails(ctx context.Context, username string) (submissions []serviceUt
 	}
 	logWithTimeStamp("✅ userContestHistory Typecast done")
 
-	fmt.Println(submissions)
+	// err = fetchAdditionalSubmissionDetails(ctx, &submissions)
+	if err != nil {
+		return
+	}
 
-	// fetchAdditionalSubmissionDetails(ctx, &submissions)
-
+	logWithTimeStamp("✅ Fetch successful")
 	return
 }
 
-func fetchAdditionalSubmissionDetails(ctx context.Context, submissions *[]serviceUtilities.SubmissionData) {
+func fetchAdditionalSubmissionDetails(ctx context.Context, submissions *[]serviceUtilities.SubmissionData) error {
 	log.Println("⏳ Fetching additional submission data...")
 	bar := getBar(len(*submissions))
+
 	for i := range *submissions {
+
+		fmt.Printf("%+v\n", (*submissions)[i].CodeUrl)
 		err := chromedp.Run(ctx,
 			chromedp.Navigate((*submissions)[i].CodeUrl),
-			chromedp.WaitVisible(`span#result_language`, chromedp.ByQuery),
-			chromedp.Text(`span#result_language`, &(*submissions)[i].SubmissionLanguage),
-			// chromedp.WaitVisible(`a[href]`, chromedp.ByQuery),
-			chromedp.Evaluate(`document.querySelector("a.inline-wrap").href`, &(*submissions)[i].ProblemUrl),
+			// chromedp.Evaluate(`window.location.href`, debugUrl),
+			// chromedp.WaitVisible(`span#result_language`, chromedp.ByQuery),
+			// chromedp.Text(`span#result_language`, &(*submissions)[i].SubmissionLanguage),
+			// chromedp.Evaluate(`document.querySelector("a.inline-wrap").href`, &(*submissions)[i].ProblemUrl),
 		)
 		if err != nil {
-			log.Println(err.Error())
+			return err
 		}
 		bar.Add(1)
 	}
+
 	logWithTimeStamp("✅ Additional submission data fetched")
-}
-
-var startTime time.Time
-
-func logWithTimeStamp(msg string) {
-	log.Printf("%s, took %.3fs\n", msg, time.Since(startTime).Seconds())
-}
-
-func getBar(items int) *progressbar.ProgressBar {
-	return progressbar.NewOptions(items,
-		progressbar.OptionOnCompletion(func() { fmt.Println() }),
-		progressbar.OptionSetRenderBlankState(true),
-		progressbar.OptionShowCount(),
-		progressbar.OptionShowIts(),
-		progressbar.OptionSpinnerType(10),
-		progressbar.OptionThrottle(time.Second),
-	)
+	return nil
 }
 
 func main() {
-
+	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 	//Starting time and loading env variables
 	startTime = time.Now()
 	if err := godotenv.Load(); err != nil {
@@ -366,29 +291,45 @@ func main() {
 	logWithTimeStamp("✅ Created chromecp context")
 
 	//Login to leetcode
-	log.Println("⏳ logging into leetcode...")
-	chromedp.Run(ctx, logIntoLeetCode(os.Getenv(`LEETCODE_USERNAME`), os.Getenv(`LEETCODE_PASSWORD`)))
-	logWithTimeStamp("✅ Log in to leetcode successfull")
+	if err := logIntoLeetCode(ctx, os.Getenv(`LEETCODE_USERNAME`), os.Getenv(`LEETCODE_PASSWORD`)); err != nil {
+		log.Fatalln(err.Error())
+	}
 
 	//Starting fetch
+	submissions, contests, err := fetchDetails(ctx, `SanpuiRonak`)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 
-	log.Println("⏳ starting data fetch...")
-	// submissions, contests, err := fetchDetails(ctx, `SanpuiRonak`)
-	var test []serviceUtilities.SubmissionData
-	test = append(test, serviceUtilities.SubmissionData{
-		CodeUrl: "https://leetcode.com/submissions/detail/764090438/",
-	})
-	fetchAdditionalSubmissionDetails(ctx, &test)
-	// if err != nil {
-	// 	log.Fatalf(err.Error())
-	// }
-	logWithTimeStamp("✅ Fetch successful")
+	log.Println("⏳ Writing to database...")
+	dbInstance, err := serviceUtilities.OpenDatabaseConnection(os.Getenv(`MONGODB_URI`))
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	if err := serviceUtilities.AppendContestData(dbInstance, "r@g.com", "Leetcode", contests); err != nil {
+		log.Fatalln(err.Error())
+	}
+	if err := serviceUtilities.AppendSubmissionData(dbInstance, "r@g.com", "Leetcode", submissions); err != nil {
+		log.Fatalln(err.Error())
+	}
+	serviceUtilities.CloseDatabaseConnection(dbInstance)
+	logWithTimeStamp("✅ Writing to database successful")
 
-	// for _, submission := range submissions {
-	// 	fmt.Println(submission)
-	// }
-	// for _, contest := range contests {
-	// 	fmt.Println(contest)
-	// }
+}
 
+var startTime time.Time
+
+func logWithTimeStamp(msg string) {
+	log.Printf("%s, took %.3fs\n", msg, time.Since(startTime).Seconds())
+}
+
+func getBar(items int) *progressbar.ProgressBar {
+	return progressbar.NewOptions(items,
+		progressbar.OptionOnCompletion(func() { fmt.Println() }),
+		progressbar.OptionSetRenderBlankState(true),
+		progressbar.OptionShowCount(),
+		progressbar.OptionShowIts(),
+		progressbar.OptionSpinnerType(10),
+		progressbar.OptionThrottle(time.Second),
+	)
 }

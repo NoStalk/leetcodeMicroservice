@@ -1,0 +1,3 @@
+[submodule "protoDefinitions"]
+	path = protoDefinitions
+	url = https://github.com/NoStalk/protoDefinitions

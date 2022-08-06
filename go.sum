@@ -5,6 +5,8 @@ github.com/NoStalk/serviceUtilities v0.0.0-20220804203050-e3a72b91dfa6 h1:7C9cWK
 github.com/NoStalk/serviceUtilities v0.0.0-20220804203050-e3a72b91dfa6/go.mod h1:4V2xV6GoUk0b9mF4L/+UvC+f0Sd3SbN2YtwIvGkqH6Y=
 github.com/NoStalk/serviceUtilities v0.0.0-20220805123857-1d9c3098dd6b h1:6b1C39+cLxP/FDXFzyGqYClDoAEUlDCE0Q7LpdNE6OY=
 github.com/NoStalk/serviceUtilities v0.0.0-20220805123857-1d9c3098dd6b/go.mod h1:4V2xV6GoUk0b9mF4L/+UvC+f0Sd3SbN2YtwIvGkqH6Y=
+github.com/NoStalk/serviceUtilities v0.0.0-20220806180453-a706b9d9deb9 h1:cA2q1oL06Yv4xWrJWCjYefiCtetp8qL1XqA5Nwc825Y=
+github.com/NoStalk/serviceUtilities v0.0.0-20220806180453-a706b9d9deb9/go.mod h1:4V2xV6GoUk0b9mF4L/+UvC+f0Sd3SbN2YtwIvGkqH6Y=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
