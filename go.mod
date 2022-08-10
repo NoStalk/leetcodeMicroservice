@@ -7,7 +7,11 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20220801115359-6a862c1fb810
 	github.com/joho/godotenv v1.4.0
 	google.golang.org/grpc v1.48.0
-	google.golang.org/protobuf v1.28.1
+)
+
+require (
+	github.com/NoStalk/protoDefinitions v0.0.0-20220807184611-7b23db2a1467
+	google.golang.org/protobuf v1.28.1 // indirect
 )
 
 require (
@@ -45,3 +49,5 @@ require (
 )
 
 replace github.com/nostalk/serviceUtilies => ../serviceUtilities
+
+replace github.com/nostalk/protDefinitions => ../protDefinitions

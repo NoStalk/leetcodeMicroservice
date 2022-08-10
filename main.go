@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 
 	"log"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/NoStalk/protoDefinitions"
+	"google.golang.org/grpc"
 
 	"github.com/joho/godotenv"
 	"github.com/schollz/progressbar/v3"
@@ -77,6 +80,10 @@ const (
 	None TrendDirection = "NONE"
 	Up   TrendDirection = "UP"
 )
+
+type server struct {
+	platformDatapb.UnimplementedFetchPlatformDataServer
+}
 
 func WaitTillSessionCookieIsSet() chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
@@ -268,52 +275,83 @@ func fetchAdditionalSubmissionDetails(ctx context.Context, submissions *[]servic
 	return nil
 }
 
+func (*server) GetUserSubmissions(ctx context.Context, req *platformDatapb.Request) (*platformDatapb.SubmissionResponse, error) {
+	log.Println("GetUserSubmission function invoked")
+	_, _, err := fetchDetails(chromedpContext, req.GetUserHandle())
+	if err != nil {
+		log.Println(err.Error())
+	}
+	submissionGRPCArray := []*platformDatapb.Submission{{
+		Language: "kotlin",
+	}}
+	submissionGRPCResponse := &platformDatapb.SubmissionResponse{
+		Submissions: submissionGRPCArray,
+	}
+
+	return submissionGRPCResponse, nil
+}
+
+var chromedpContext context.Context
+var chromedpCancel context.CancelFunc
+
 func main() {
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 	//Starting time and loading env variables
 	startTime = time.Now()
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalln("Error loading .env file")
 	}
 	logWithTimeStamp("✅ Loaded enviroment variables")
 
 	//Create a headless chrome context
 	log.Println("⏳ creating chormedp context...")
-	ctx, cancel := chromedp.NewContext(
+	chromedpContext, chromedpCancel = chromedp.NewContext(
 		context.Background(),
 		chromedp.WithLogf(log.Printf),
 	)
-	defer cancel()
+	defer chromedpCancel()
 
 	//Add timeout to the context
-	ctx, cancel = context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-	logWithTimeStamp("✅ Created chromecp context")
+	chromedpContext, chromedpCancel = context.WithTimeout(chromedpContext, time.Minute)
+	defer chromedpCancel()
+	logWithTimeStamp("✅ Created chromedp context")
 
 	//Login to leetcode
-	if err := logIntoLeetCode(ctx, os.Getenv(`LEETCODE_USERNAME`), os.Getenv(`LEETCODE_PASSWORD`)); err != nil {
-		log.Fatalln(err.Error())
+	// if err := logIntoLeetCode(ctx, os.Getenv(`LEETCODE_USERNAME`), os.Getenv(`LEETCODE_PASSWORD`)); err != nil {
+	// 	log.Fatalln(err.Error())
+	// }
+
+	//Start the server
+	lis, err := net.Listen("tcp", "0.0.0.0:5003")
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+	s := grpc.NewServer()
+	platformDatapb.RegisterFetchPlatformDataServer(s, &server{})
+	logWithTimeStamp("✅ Server started on port 5003")
+	if err = s.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve: %v", err)
 	}
 
 	//Starting fetch
-	submissions, contests, err := fetchDetails(ctx, `SanpuiRonak`)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
+	// submissions, contests, err := fetchDetails(ctx, `SanpuiRonak`)
+	// if err != nil {
+	// 	log.Fatalln(err.Error())
+	// }
 
-	log.Println("⏳ Writing to database...")
-	dbInstance, err := serviceUtilities.OpenDatabaseConnection(os.Getenv(`MONGODB_URI`))
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	if err := serviceUtilities.AppendContestData(dbInstance, "r@g.com", "Leetcode", contests); err != nil {
-		log.Fatalln(err.Error())
-	}
-	if err := serviceUtilities.AppendSubmissionData(dbInstance, "r@g.com", "Leetcode", submissions); err != nil {
-		log.Fatalln(err.Error())
-	}
-	serviceUtilities.CloseDatabaseConnection(dbInstance)
-	logWithTimeStamp("✅ Writing to database successful")
+	// log.Println("⏳ Writing to database...")
+	// dbInstance, err := serviceUtilities.OpenDatabaseConnection(os.Getenv(`MONGODB_URI`))
+	// if err != nil {
+	// 	log.Fatalln(err.Error())
+	// }
+	// if err := serviceUtilities.AppendContestData(dbInstance, "r@g.com", "Leetcode", contests); err != nil {
+	// 	log.Fatalln(err.Error())
+	// }
+	// if err := serviceUtilities.AppendSubmissionData(dbInstance, "r@g.com", "Leetcode", submissions); err != nil {
+	// 	log.Fatalln(err.Error())
+	// }
+	// serviceUtilities.CloseDatabaseConnection(dbInstance)
+	// logWithTimeStamp("✅ Writing to database successful")
 
 }
 

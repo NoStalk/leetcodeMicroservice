@@ -1,10 +1,8 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/NoStalk/serviceUtilities v0.0.0-20220804203050-e3a72b91dfa6 h1:7C9cWKOjJiTECL2el+KGACLzPYS5lrXUp93PijosYo8=
-github.com/NoStalk/serviceUtilities v0.0.0-20220804203050-e3a72b91dfa6/go.mod h1:4V2xV6GoUk0b9mF4L/+UvC+f0Sd3SbN2YtwIvGkqH6Y=
-github.com/NoStalk/serviceUtilities v0.0.0-20220805123857-1d9c3098dd6b h1:6b1C39+cLxP/FDXFzyGqYClDoAEUlDCE0Q7LpdNE6OY=
-github.com/NoStalk/serviceUtilities v0.0.0-20220805123857-1d9c3098dd6b/go.mod h1:4V2xV6GoUk0b9mF4L/+UvC+f0Sd3SbN2YtwIvGkqH6Y=
+github.com/NoStalk/protoDefinitions v0.0.0-20220807184611-7b23db2a1467 h1:1eMoeeyw6KDhiYrQIJ7P7+QrrhBHwz6BI/zB5hL9Nis=
+github.com/NoStalk/protoDefinitions v0.0.0-20220807184611-7b23db2a1467/go.mod h1:Pk1/vcNdiRgYSvQthC1RNjHplRLlAppm/zv0PVYZSbg=
 github.com/NoStalk/serviceUtilities v0.0.0-20220806180453-a706b9d9deb9 h1:cA2q1oL06Yv4xWrJWCjYefiCtetp8qL1XqA5Nwc825Y=
 github.com/NoStalk/serviceUtilities v0.0.0-20220806180453-a706b9d9deb9/go.mod h1:4V2xV6GoUk0b9mF4L/+UvC+f0Sd3SbN2YtwIvGkqH6Y=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
@@ -165,8 +163,6 @@ golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220731174439-a90be440212d h1:Sv5ogFZatcgIMMtBSTTAgMYsicp25MXBubjXNDKwm80=
-golang.org/x/sys v0.0.0-20220731174439-a90be440212d/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220804214406-8e32c043e418 h1:9vYwv7OjYaky/tlAeD7C4oC9EsPTlaFl1H2jS++V+ME=
 golang.org/x/sys v0.0.0-20220804214406-8e32c043e418/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
